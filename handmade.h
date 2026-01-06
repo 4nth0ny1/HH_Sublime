@@ -1,41 +1,66 @@
 #if !defined(HANDMADE_H)
-#include <stdint.h>
+/* ========================================================================
+   $File: $
+   $Date: $
+   $Revision: $
+   $Creator: Casey Muratori $
+   $Notice: (C) Copyright 2014 by Molly Rocket, Inc. All Rights Reserved. $
+   ======================================================================== */
 
-#define internal static 
-#define local_persist static 
-#define global_variable static
+/*
+  NOTE(casey):
 
-#define Pi32 3.14159265359f
+  HANDMADE_INTERNAL:
+    0 - Build for public release
+    1 - Build for developer only
+
+  HANDMADE_SLOW:
+    0 - Not slow code allowed!
+    1 - Slow code welcome.
+*/
 
 
-typedef int8_t int8;
-typedef int16_t int16;
-typedef int32_t int32;
-typedef int64_t int64;
-typedef int32 bool32;
+#if HANDMADE_SLOW
+// TODO(casey): Complete assertion macro - don't worry everyone!
+#define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
+#else
+#define Assert(Expression)
+#endif
 
-typedef uint8_t uint8;
-typedef uint16_t uint16;
-typedef uint32_t uint32;
-typedef uint64_t uint64;
-
-typedef float real32;
-typedef double real64;
+#define Kilobytes(Value) ((Value)*1024LL)
+#define Megabytes(Value) (Kilobytes(Value)*1024LL)
+#define Gigabytes(Value) (Megabytes(Value)*1024LL)
+#define Terabytes(Value) (Gigabytes(Value)*1024LL)
 
 #define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
+// TODO(casey): swap, min, max ... macros???
 
+/*
+  TODO(casey): Services that the platform layer provides to the game
+*/
 
-struct game_offscreen_buffer {
-    void* Memory;
+/*
+  NOTE(casey): Services that the game provides to the platform layer.
+  (this may expand in the future - sound on separate thread, etc.)
+*/
+
+// FOUR THINGS - timing, controller/keyboard input, bitmap buffer to use, sound buffer to use
+
+// TODO(casey): In the future, rendering _specifically_ will become a three-tiered abstraction!!!
+struct game_offscreen_buffer
+{
+    // NOTE(casey): Pixels are alwasy 32-bits wide, Memory Order BB GG RR XX
+    void *Memory;
     int Width;
     int Height;
     int Pitch;
 };
 
-struct game_sound_output_buffer {
+struct game_sound_output_buffer
+{
     int SamplesPerSecond;
     int SampleCount;
-    int16* Samples;
+    int16 *Samples;
 };
 
 struct game_button_state
@@ -47,7 +72,7 @@ struct game_button_state
 struct game_controller_input
 {
     bool32 IsAnalog;
-
+    
     real32 StartX;
     real32 StartY;
 
@@ -56,10 +81,10 @@ struct game_controller_input
 
     real32 MaxX;
     real32 MaxY;
-
+    
     real32 EndX;
     real32 EndY;
-
+    
     union
     {
         game_button_state Buttons[6];
@@ -77,12 +102,34 @@ struct game_controller_input
 
 struct game_input
 {
+    // TODO(casey): Insert clock values here.    
     game_controller_input Controllers[4];
 };
 
-internal void GameUpdateAndRender(game_input* Input, game_offscreen_buffer* Buffer,
-                                  game_sound_output_buffer* SoundBuffer);
+struct game_memory
+{
+    bool32 IsInitialized;
 
+    uint64 PermanentStorageSize;
+    void *PermanentStorage; // NOTE(casey): REQUIRED to be cleared to zero at startup
+
+    uint64 TransientStorageSize;
+    void *TransientStorage; // NOTE(casey): REQUIRED to be cleared to zero at startup
+};
+
+internal void GameUpdateAndRender(game_memory *Memory, game_input *Input, game_offscreen_buffer *Buffer,
+                                  game_sound_output_buffer *SoundBuffer);
+
+//
+//
+//
+
+struct game_state
+{
+    int ToneHz;
+    int GreenOffset;
+    int BlueOffset;
+};
 
 #define HANDMADE_H
 #endif
